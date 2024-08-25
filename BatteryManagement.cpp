@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "CheckBatteryStatus.h"
+#include "BatteryManagement.h"
 
 using namespace std;
 
