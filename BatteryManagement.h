@@ -1,21 +1,11 @@
-#ifndef BATTERY_MANAGEMENT_SYSTEM_H
-#define BATTERY_MANAGEMENT_SYSTEM_H
+#include <iostream>
+#include <string>
 
-#include "ParameterCheck.h"
+const float TEMP_LOWER_LIMIT = 0;
+const float TEMP_UPPER_LIMIT = 45;
+const float SOC_LOWER_LIMIT  = 20;
+const float SOC_UPPER_LIMIT  = 80;
+const float CHARGE_LOWER_LIMIT = 0;
+const float CHARGE_UPPER_LIMIT = 0.8;
 
-class BatteryManagement {
-    // Member variables are now references to the respective ParameterCheck objects
-    const ParameterCheck& temperatureCheck;
-    const ParameterCheck& socCheck;
-    const ParameterCheck& chargeRateCheck;
-
-public:
-    // Constructor now correctly initializes the member references
-    BatteryManagement(const ParameterCheck& tempCheck,
-                            const ParameterCheck& socCheck,
-                            const ParameterCheck& chargeCheck);
-
-    bool batteryIsOk(float temperature, float soc, float chargeRate) const;
-};
-
-#endif // BATTERY_MANAGEMENT_SYSTEM_H
+bool batteryIsOk(float temperature, float soc, float chargeRate);
