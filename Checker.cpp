@@ -1,53 +1,132 @@
 #include <iostream>
-#include <unordered_map>
 #include <string>
-#include <cassert>
+#include <assert.h>
 
-struct MeasureLimits {
-    float lowerLimit;
-    float upperLimit;
-};
+#include "CheckBatteryStatus.h"
 
-std::unordered_map<std::string, MeasureLimits> measureLimits = {
-    {"Temperature", {0, 45}},
-    {"State of Charge", {20, 80}},
-    {"Charge Rate", {0, 0.8f}}
-};
+using namespace std;
 
-bool batteryIsOk(float temperature, float soc, float chargeRate);
+bool checkValueInRangeMock(float value, float LowerLimit, float UpperLimit, const string& OutputMessage, void (*messageHandler)(const string&));
 
-std::unordered_map<std::string, bool> checkMeasure(const std::string& measureName, float measureValue) {
-    std::unordered_map<std::string, bool> results;
-    bool status = true;
-    float lowerLimit = measureLimits[measureName].lowerLimit;
-    float upperLimit = measureLimits[measureName].upperLimit;
+void CheckWarningForGivenValueMock (float value, float LowerLimit, float UpperLimit, const string& UpperLimitWarningMessage, const string& LowerLimitWarningMessage, void (*messageHandler)(const string&));
 
-    if (measureValue < lowerLimit) {
-        std::cout << measureName << " is too low!" << std::endl;
-        status = false;
-    } else if (measureValue > upperLimit) {
-        std::cout << measureName << " is too high!" << std::endl;
-        status = false;
-    }
-
-    results["status"] = status;
-    return results;
+// Test double for message handling
+string capturedMessage;
+void MockPrintMessage(const string& message) {
+    capturedMessage = message;
 }
 
-bool batteryIsOk(float temperature, float soc, float chargeRate) {
-    auto tempResults = checkMeasure("Temperature", temperature);
-    auto socResults = checkMeasure("State of Charge", soc);
-    auto chargeResults = checkMeasure("Charge Rate", chargeRate);
-    return tempResults["status"] && socResults["status"] && chargeResults["status"];
+
+bool checkValueInRangeMock(float value,
+		           float LowerLimit,
+			   float UpperLimit,
+			   const string& OutputMessage,
+			   void (*messageHandler)(const string&)) 
+{
+        if (value < LowerLimit || value > UpperLimit) 
+	{
+	    MockPrintMessage(OutputMessage);
+	    return false;
+        }
+        return true;
 }
 
-int main() {
-    // Test cases
-    assert(batteryIsOk(25, 70, 0.7f) == true);
-    assert(batteryIsOk(50, 85, 0.0f) == false);
-    assert(batteryIsOk(-1, 70, 0.7f) == false);
-    assert(batteryIsOk(25, 10, 0.7f) == false);
-    assert(batteryIsOk(25, 70, 0.9f) == false);
-    std::cout << "Some more tests needed" << std::endl;
-    return 0;
+void CheckWarningForGivenValueMock (float value,
+		                    float LowerLimit,
+				    float UpperLimit,
+				    const string& UpperLimitWarningMessage,
+				    const string& LowerLimitWarningMessage,
+				    void (*messageHandler)(const string&))
+{
+    float UpperLimitTolerance = 0.05 * UpperLimit;
+    float LowerLimitTolerance = 0.05 * LowerLimit;
+
+    if (value >= UpperLimit - UpperLimitTolerance)
+    	MockPrintMessage(UpperLimitWarningMessage);
+
+    if (value <= LowerLimit + LowerLimitTolerance)
+    	MockPrintMessage(LowerLimitWarningMessage);
+}
+
+// Unit test function
+void test_checkValueInRange() {
+// Declare a function pointer
+    void (*messageHandler)(const string&);
+
+    // Assign the function pointer to the mock print function
+    messageHandler = MockPrintMessage;
+
+    // Test case 1: value is within range
+    capturedMessage.clear();
+    bool result1 = checkValueInRangeMock(10, TEMP_LOWER_LIMIT, TEMP_UPPER_LIMIT, "Temperature Within Range", messageHandler);
+    assert(result1 == true);
+    assert(capturedMessage.empty());
+
+    // Test case 2: Temp value is out of range
+    capturedMessage.clear();
+    bool result2 = checkValueInRangeMock(50, TEMP_LOWER_LIMIT, TEMP_UPPER_LIMIT, "Temperature Out Of Range", messageHandler);
+    assert(result2 == false);
+    assert(capturedMessage == "Temperature Out Of Range");
+
+    // Test case 3: SOC value is range
+    capturedMessage.clear();
+    bool result3 = checkValueInRangeMock(50, SOC_LOWER_LIMIT, SOC_UPPER_LIMIT, "SOC Value in Range", messageHandler);
+    assert(result1 == true);
+    assert(capturedMessage.empty());
+
+    // Test case 4: Soc value is out of range
+    capturedMessage.clear();
+    bool result4 = checkValueInRangeMock(100, SOC_LOWER_LIMIT, SOC_UPPER_LIMIT, "State of Charge out of range", messageHandler);
+    assert(result2 == false);
+    assert(capturedMessage == "State of Charge out of range");
+
+    // Test case 5: Charge value is out of range
+    capturedMessage.clear();
+    bool result5 = checkValueInRangeMock(0.5, CHARGE_LOWER_LIMIT, CHARGE_UPPER_LIMIT, "Charge in Range", messageHandler);
+    assert(result1 == true);
+    assert(capturedMessage.empty());
+
+    // Test case 6: Charge value is out of range
+    capturedMessage.clear();
+    bool result6 = checkValueInRangeMock(-1, CHARGE_LOWER_LIMIT, CHARGE_UPPER_LIMIT, "Charge Rate out of range", messageHandler);
+    assert(result2 == false);
+    assert(capturedMessage == "Charge Rate out of range");
+
+}
+
+
+void test_CheckWarningForGivenValue() {
+
+    void (*messageHandler)(const string&);
+
+    // Assign the function pointer to the mock print function
+    messageHandler = MockPrintMessage;
+
+    // Test case 1: Check for Hign Temperature Warning
+    capturedMessage.clear();
+    CheckWarningForGivenValueMock(44, TEMP_LOWER_LIMIT , TEMP_UPPER_LIMIT,"Approaching High Temperature","Approaching Low Temperature", messageHandler);
+    assert(capturedMessage == "Approaching High Temperature");
+
+    // Test case 2 : Check for Low Temperature Warning Message
+    capturedMessage.clear();
+    CheckWarningForGivenValueMock(0, TEMP_LOWER_LIMIT , TEMP_UPPER_LIMIT,"Approaching High Temperature","Approaching Low Temperature", messageHandler);
+    assert(capturedMessage == "Approaching Low Temperature");
+
+    /* Test cases to check SOC warnings */
+    capturedMessage.clear();
+    CheckWarningForGivenValueMock(79, SOC_LOWER_LIMIT , SOC_UPPER_LIMIT,"Approaching Charge Peak","Approaching Discharge", messageHandler);
+    assert(capturedMessage == "Approaching Charge Peak");
+
+    capturedMessage.clear();
+    CheckWarningForGivenValueMock(20, SOC_LOWER_LIMIT , SOC_UPPER_LIMIT,"Approaching Charge Peak","Approaching Discharge", messageHandler);
+    assert(capturedMessage == "Approaching Discharge");
+
+    /* Test cases to check Charge warnings */
+    capturedMessage.clear();
+    CheckWarningForGivenValueMock(0.79, CHARGE_LOWER_LIMIT , CHARGE_UPPER_LIMIT,"Approaching Peak Charge Rate", "Approaching Lower Charge Rate", messageHandler);
+    assert(capturedMessage == "Approaching Peak Charge Rate");
+
+    capturedMessage.clear();
+    CheckWarningForGivenValueMock(0, CHARGE_LOWER_LIMIT , CHARGE_UPPER_LIMIT,"Approaching Peak Charge Rate", "Approaching Lower Charge Rate", messageHandler);
+    assert(capturedMessage == "Approaching Lower Charge Rate");
 }
