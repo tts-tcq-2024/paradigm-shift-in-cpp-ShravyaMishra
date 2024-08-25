@@ -2,7 +2,7 @@
 #include <string>
 #include <assert.h>
 
-#include "CheckBatteryStatus.h"
+#include "BatteryManagement.h"
 
 using namespace std;
 
