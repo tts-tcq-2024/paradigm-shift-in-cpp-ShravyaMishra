@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <iostream>
 #include <string>
-#include "CheckBatteryStatus.h"
+#include "BatteryManagement.h"
 
 extern bool test_checkValueInRange();
 extern void test_CheckWarningForGivenValue();
