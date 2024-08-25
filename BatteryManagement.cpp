@@ -62,7 +62,7 @@ bool checkChargeRate (float ChargeRate)
 
 bool batteryIsOk(float temperature, float soc, float ChargeRate) 
 {
-    bool BatteryStatus = (checkTemperature(temperature) && checkSoc(soc) && checkChargeRate(ChargeRate));
+    bool CheckBatteryManagement = (checkTemperature(temperature) && checkSoc(soc) && checkChargeRate(ChargeRate));
 
-    return BatteryStatus;
+    return CheckBatteryManagement;
 }
